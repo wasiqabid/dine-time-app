@@ -1,6 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { Formik } from 'formik';
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -15,8 +19,42 @@ import Frame from '../../assets/images/Frame.png';
 import validationSchema from '../../utils/authSchema';
 
 const Signin = () => {
-  const handleSignin = () => {};
   const router = useRouter();
+
+  const db = getFirestore();
+  const auth = getAuth();
+  const handleSignin = async (values) => {
+    try {
+      const userCredentials = await signInWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password,
+      );
+      const user = userCredentials.user;
+
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        console.log('User data.', userDoc.data());
+        await AsyncStorage.setItem('userEmail', values.email);
+        router.push('/home');
+      } else {
+        console.log('no such document.');
+      }
+    } catch (error) {
+      if (error.code === 'auth/invalid-credential') {
+        Alert.alert('Sign In failed!', 'Incorrect password. please try again', [
+          { text: 'OK' },
+        ]);
+      } else {
+        Alert.alert(
+          'Sign in failed!',
+          'Error while signing in. Please try later.',
+          [{ text: 'OK' }],
+        );
+      }
+    }
+  };
+  // const router = useRouter();
   return (
     <SafeAreaView style={{ backgroundColor: '#1b1818', flex: 1 }}>
       <ScrollView

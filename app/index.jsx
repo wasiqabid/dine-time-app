@@ -1,4 +1,6 @@
 import { useRouter } from 'expo-router';
+import { Colors } from '../assets/images/CSS/Colors';
+
 import {
   Image,
   ScrollView,
@@ -47,7 +49,10 @@ export default function Index() {
             </TouchableOpacity>
           </View>
           <View style={style.Linetxt}>
-            <View style={style.line} /> <Text style={style.Linetxt}>or</Text>
+            <View style={style.line} />{' '}
+            <Text style={{ marginHorizontal: 10, color: Colors.Primary }}>
+              or
+            </Text>
             <View style={style.line} />
           </View>
           <View style={style.Usertxt}>
@@ -101,13 +106,15 @@ const style = StyleSheet.create({
 
   Linetxt: {
     color: '#fff',
-    paddingTop: 20,
-    fontWeight: 'semi-bold',
+    marginVertical: 20,
+    // paddingTop: 20,
     border: 10,
     // borderColor: 'black',
     flexDirection: 'row',
     justifyContent: 'center',
     alignContent: 'center',
+    // backgroundColor: 'red',
+    alignItems: 'center',
   },
 
   line: {

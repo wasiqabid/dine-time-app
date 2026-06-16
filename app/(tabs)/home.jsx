@@ -15,21 +15,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../assets/images/CSS/Colors';
 import dinetimelogo from '../../assets/images/dinetimelogo.png';
 import banner from '../../assets/images/homeBanner.png';
-// import uploadData from '../../config/bulkupload';
+import {
+  uploadCarouselImages,
+  uploadRestaurants,
+  uploadSlots,
+} from '../../config/bulkupload';
 // import { restaurants } from '../../store/restaurants';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 // import { db } from '../../config/firebaseConfig';
 import { useRouter } from 'expo-router';
+
 import { db } from '../../config/firebaseConfig';
 const Home = () => {
   const [restaurants, setRestaurants] = useState([]);
   const router = useRouter();
 
+  useEffect(() => {
+    uploadRestaurants();
+    uploadSlots();
+    uploadCarouselImages();
+  }, []);
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      // onPress={() => router.push(`/restaurant/${item.name}`)}
-      onPress={() => router.push(`/restaurant/${item.address}`)}
+      onPress={() => router.push(`/restaurant/${item.name}`)}
+      // onPress={() => router.push(`/restaurant/${item.address}`)}
       style={{
         backgroundColor: Colors.dark.icon,
         height: 190,
@@ -64,17 +75,19 @@ const Home = () => {
       </Text>
     </TouchableOpacity>
   );
+
   const getRestaurants = async () => {
-    const q = query(collection(db, 'restaurant'));
+    const q = query(collection(db, 'restaurants'));
     const res = await getDocs(q);
 
     res.forEach((item) => {
       setRestaurants((prev) => [...prev, item.data()]);
     });
   };
+
   useEffect(() => {
     getRestaurants();
-  });
+  }, []);
 
   return (
     <SafeAreaView style={{ backgroundColor: '#111', flex: 1 }}>
@@ -119,7 +132,7 @@ const Home = () => {
           source={banner}
         >
           <BlurView
-            intensity={Platform.OS === 'android' ? 100 : 25}
+            intensity={Platform.OS === 'android' ? 90 : 25}
             tint='dark'
             // style={{ alignSelf: 'center' }}
           >

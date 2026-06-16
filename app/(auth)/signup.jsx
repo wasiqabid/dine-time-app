@@ -1,6 +1,11 @@
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { doc, getFirestore, setDoc } from 'firebase/firestore';
 import { Formik } from 'formik';
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -15,8 +20,41 @@ import Frame from '../../assets/images/Frame.png';
 import validationSchema from '../../utils/authSchema';
 
 const Signup = () => {
-  const handleSignup = () => {};
   const router = useRouter();
+  const db = getFirestore();
+  const auth = getAuth();
+
+  const handleSignup = async (values) => {
+    try {
+      const userCredentials = await createUserWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password,
+      );
+      const user = userCredentials.user;
+
+      await setDoc(doc(db, 'users', user.uid), {
+        email: values.email,
+        createdAt: new Date(),
+      });
+      await AsyncStorage.setItem('userEmail', values.email);
+      router.push('/home');
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        Alert.alert(
+          'Sign Up failed!',
+          'already signed up with this email. Please use a different email',
+          [{ text: 'OK' }],
+        );
+      } else {
+        Alert.alert(
+          'Sign Up failed!',
+          'Error while signing up. Please try later.',
+          [{ text: 'OK' }],
+        );
+      }
+    }
+  };
   return (
     <SafeAreaView style={{ backgroundColor: '#1b1818', flex: 1 }}>
       <ScrollView
