@@ -1,0 +1,203 @@
+import { useRouter } from 'expo-router';
+import { Formik } from 'formik';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import dinetimelogo from '../../assets/images/dinetimelogo.png';
+import Frame from '../../assets/images/Frame.png';
+import validationSchema from '../../utils/authSchema';
+
+const Signin = () => {
+  const handleSignin = () => {};
+  const router = useRouter();
+  return (
+    <SafeAreaView style={{ backgroundColor: '#1b1818', flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          backgroundColor: '#1b1818',
+          // height: '100%',
+          paddingBottom: 30,
+          justifyContent: 'space-between',
+        }}
+      >
+        <View
+          style={{
+            paddingHorizontal: '50',
+            backgroundColor: '#1b1818',
+            // height: '100%',
+            gap: 10,
+          }}
+        >
+          <Image
+            source={dinetimelogo}
+            style={{ width: 230, height: 150, alignSelf: 'center' }}
+          />
+
+          <Text
+            style={{
+              paddingTop: 60,
+              paddingBottom: 10,
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: 18,
+              textAlign: 'center',
+            }}
+          >
+            Sign in Here
+          </Text>
+          <Formik
+            initialValues={{ email: '', password: '' }}
+            validationSchema={validationSchema}
+            onSubmit={handleSignin}
+          >
+            {({
+              handleBlur,
+              handleChange,
+              handleSubmit,
+              values,
+              touched,
+              errors,
+            }) => (
+              <View>
+                <Text style={style.valueTxt}>Email</Text>
+                <TextInput
+                  style={style.imputTxt}
+                  keyboardType='email-address'
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  value={values.email}
+                />
+                {touched.email && errors.email && (
+                  <Text style={{ color: 'red' }}>{errors.email}</Text>
+                )}
+                <Text style={style.valueTxt}>Password</Text>
+                <TextInput
+                  style={style.imputTxt}
+                  secureTextEntry
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  value={values.password}
+                />
+                {touched.password && errors.password && (
+                  <Text style={{ color: 'red' }}>{errors.password}</Text>
+                )}
+                <TouchableOpacity
+                  onPress={handleSubmit}
+                  style={style.btnSignin}
+                >
+                  <Text style={style.Signintxt}>Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </Formik>
+          <View style={style.Usertxt}>
+            <Text style={style.Usertxt}>New User?</Text>
+            <TouchableOpacity
+              style={{ paddingTop: 20 }}
+              onPress={() => router.push('/signup')}
+            >
+              <Text style={style.btnRoute}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={style.Linetxt}>
+            <View style={style.line} /> <Text style={style.Linetxt}>or</Text>
+            <View style={style.line} />
+          </View>
+          <View style={style.Usertxt}>
+            <Text style={style.Usertxt}>Be a </Text>
+            <TouchableOpacity
+              style={{ paddingTop: 20 }}
+              onPress={() => router.push('/home')}
+            >
+              <Text style={style.btnRoute}>Guest User</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Image
+            source={Frame}
+            style={{ height: 300, width: 300, resizeMode: 'contain' }}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+const style = StyleSheet.create({
+  btnSignin: {
+    backgroundColor: '#f49b33',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  Signintxt: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1b1818',
+  },
+
+  imputTxt: {
+    backgroundColor: '#1b1818',
+    color: '#ffffff',
+    borderColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    // alignItems: 'center',
+    borderWidth: 2,
+    paddingBottom: 10,
+    paddingTop: 10,
+  },
+
+  valueTxt: {
+    color: '#f49b33',
+    fontWeight: 'bold',
+    paddingBottom: 10,
+    paddingTop: 10,
+  },
+  Usertxt: {
+    paddingTop: 20,
+    color: '#fff',
+    fontWeight: 'semi-bold',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignContent: 'center',
+  },
+  btnRoute: {
+    // paddingTop: 20,
+    paddingLeft: 5,
+    color: '#f49b33',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+    fontSize: 16,
+  },
+  line: {
+    borderBottomWidth: 2,
+    borderColor: '#f49b33',
+    width: 100,
+    marginBottom: 1,
+    // padding: 2,
+    alignContent: 'center',
+  },
+  Linetxt: {
+    color: '#fff',
+    paddingTop: 20,
+    fontWeight: 'semi-bold',
+    border: 10,
+    // borderColor: 'black',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignContent: 'center',
+  },
+});
+
+export default Signin;
