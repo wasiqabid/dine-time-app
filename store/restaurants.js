@@ -111,15 +111,6 @@ const restaurants = [
     opening: '11:00',
     seats: 110,
   },
-  {
-    id: 'restaurant_13',
-    address: '123 Main Street, Suite 150, Las Vegas, NV 89109',
-    closing: '23:30',
-    image: 'https://images.pexels.com/photos/1058277/pexels-photo-1058277.jpeg',
-    name: 'Vegas Strip Café',
-    opening: '12:00',
-    seats: 120,
-  },
 ];
 
 const carouselImages = [
@@ -314,10 +305,6 @@ const slots = [
   {
     res_id: 'restaurant_12',
     slot: ['11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'],
-  },
-  {
-    res_id: 'restaurant_13',
-    slot: ['12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
   },
 ];
 
