@@ -1,35 +1,27 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { useEffect, useRef, useState } from 'react';
-import {
-  Dimensions,
-  FlatList,
-  Image,
-  Linking,
-  Platform,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { useEffect, useState } from 'react';
+import { Linking, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../assets/images/CSS/Colors';
 // import { db } from '../../config/firebaseConfig';
 
+import Carousel from '../../components/restaurant/Carousel';
 import DatePickerComponent from '../../components/restaurant/DatePickerComponent';
+import FindSlots from '../../components/restaurant/FindSlots';
+import GuestPickerComponent from '../../components/restaurant/GuestPickerComponent';
 import { db } from '../../config/firebaseConfig';
 export default function Restaurant() {
   const [date, setDate] = useState(new Date());
 
   const { restaurant } = useLocalSearchParams();
-  const windowWidth = Dimensions.get('window').width;
 
-  const flatListRef = useRef(null);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [restaurantData, setRestaurantData] = useState({});
   const [carouselData, setCarouselData] = useState({});
   const [slotsData, setSlotsData] = useState({});
+  const [selectedNumber, setSelectedNumber] = useState(2);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const handleLocation = async () => {
     const url = 'https://maps.app.goo.gl/bvccxt9NYnJT6DyA6';
     const supported = await Linking.canOpenURL(url);
@@ -38,130 +30,6 @@ export default function Restaurant() {
     } else {
       console.log("can't open link!", url);
     }
-  };
-  const handleNextImage = () => {
-    const carouselLength = carouselData.images.length;
-    if (currentIndex < carouselLength - 1) {
-      const nextIndex = currentIndex + 1;
-      setCurrentIndex(nextIndex);
-      flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
-    }
-
-    if (currentIndex == carouselLength - 1) {
-      const nextIndex = 0;
-      setCurrentIndex(nextIndex);
-      flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
-    }
-  };
-  const handlePrevImage = () => {
-    const carouselLength = carouselData.images.length;
-    if (currentIndex > 0) {
-      // const prevIndex = currentIndex - 1;
-      const prevIndex = currentIndex - 1;
-      setCurrentIndex(prevIndex);
-      flatListRef.current.scrollToIndex({ index: prevIndex, animated: true });
-    }
-    if (currentIndex == 0) {
-      const prevIndex = carouselLength - 1;
-      setCurrentIndex(prevIndex);
-      flatListRef.current.scrollToIndex({ index: prevIndex, animated: true });
-    }
-  };
-  const carouselItem = ({ item }) => {
-    return (
-      <View
-        style={{
-          width: windowWidth - 3,
-          height: 200,
-          // borderCurve: 'circular',
-          borderRadius: 25,
-          // position: 'relative',
-        }}
-      >
-        <View
-          style={{
-            position: 'absolute',
-            top: '50%',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            borderRadius: 50,
-            padding: 5,
-            zIndex: 10,
-            right: '9%',
-          }}
-        >
-          <Ionicons
-            onPress={handleNextImage}
-            name='arrow-forward'
-            size={24}
-            color='white'
-          />
-        </View>
-
-        <View
-          style={{
-            position: 'absolute',
-            top: '50%',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            borderRadius: 50,
-            padding: 5,
-            zIndex: 10,
-            left: '3%',
-          }}
-        >
-          <Ionicons
-            onPress={handlePrevImage}
-            name='arrow-back'
-            size={24}
-            color='white'
-          />
-        </View>
-        <View
-          style={{
-            position: 'absolute',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            left: '50%',
-            transform: [{ translateX: -50 }],
-            zIndex: 10,
-            bottom: 15,
-            flexDirection: 'row',
-          }}
-        >
-          {carouselData.images?.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                {
-                  backgroundColor: 'white',
-                  height: 4,
-                  width: 4,
-                  borderRadius: '100%',
-                  marginHorizontal: 2,
-                },
-                i === currentIndex && {
-                  height: 7,
-                  width: 7,
-                },
-              ]}
-            />
-          ))}
-        </View>
-        <Image
-          source={{ uri: item }}
-          style={{
-            resizeMode: 'cover',
-            height: '100%',
-            width: '90%',
-            opacity: 0.5,
-            backgroundColor: 'black',
-            marginRight: 20,
-            marginLeft: 5,
-            borderRadius: 35,
-          }}
-        />
-      </View>
-    );
   };
 
   const getRestaurantData = async () => {
@@ -191,7 +59,10 @@ export default function Restaurant() {
           console.log('Restaurant, No matching slots found');
           return;
         }
+        console.log('Slots snapshots::', slotsSnapshot);
         slotsSnapshot.forEach((slotDoc) => {
+          console.log('Slots snapshots:: slotDoc', slotDoc);
+
           setSlotsData(slotDoc.data());
         });
 
@@ -218,7 +89,7 @@ export default function Restaurant() {
   }, []);
 
   console.log('Restaurant, Restaurant data: ', restaurantData);
-  console.log('Restaurant, Slot data: ', slotsData);
+  console.log('Restaurant, Slot data: ', slotsData?.slot);
   console.log('Restaurant, Carousel Data: ', carouselData);
   // console.log(restaurantData, slotsData, carouselData);
 
@@ -246,26 +117,7 @@ export default function Restaurant() {
             {restaurant}
           </Text>
         </View>
-        <View
-          style={{
-            maxHeight: '100%',
-            maxWidth: '100%',
-            marginHorizontal: 15,
-            marginVertical: 15,
-            // borderCurve: 'circular',
-            borderRadius: 25,
-          }}
-        >
-          <FlatList
-            ref={flatListRef}
-            data={carouselData.images}
-            renderItem={carouselItem}
-            horizontal
-            scrollEnabled={false}
-            style={{ borderRadius: 25 }}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
+        <Carousel images={carouselData.images || []} />
 
         <View
           style={{ flex: 1, flexDirection: 'row', marginTop: 2, padding: 15 }}
@@ -302,21 +154,83 @@ export default function Restaurant() {
             {restaurantData.opening} - {restaurantData.closing}
           </Text>
         </View>
-        <View style={{ flex: 1, flexDirection: 'row' }}>
+        <View
+          style={{
+            borderColor: '#f49b33',
+            borderRadius: 10,
+            borderWidth: 2,
+            padding: 10,
+            marginVertical: 10,
+            marginHorizontal: 10,
+          }}
+        >
           <View
             style={{
               flex: 1,
               flexDirection: 'row',
-              padding: 15,
-              alignContent: 'right',
             }}
           >
-            <Ionicons name='calendar' size={20} color={Colors.Primary} />
-            <Text style={{ color: 'white', marginHorizontal: 15 }}>
-              Select Booking Date
-            </Text>
+            <View
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                padding: 15,
+                alignContent: 'right',
+              }}
+            >
+              <Ionicons name='calendar' size={20} color={Colors.Primary} />
+              <Text style={{ color: 'white', marginHorizontal: 15 }}>
+                Select Booking Date
+              </Text>
+            </View>
+            <DatePickerComponent date={date} setDate={setDate} />
           </View>
-          <DatePickerComponent date={date} setDate={setDate} />
+          <View
+            style={{
+              flex: 1,
+              flexDirection: 'row',
+              // padding: 15,
+              paddingHorizontal: 7,
+              paddingVertical: 5,
+              borderColor: '#313131',
+              borderWidth: 2,
+              backgroundColor: '#313131',
+              marginTop: 10,
+              marginHorizontal: 10,
+              borderRadius: 5,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                // padding: 15,
+                alignContent: 'right',
+                marginTop: 20,
+              }}
+            >
+              <Ionicons name='people' size={20} color={Colors.Primary} />
+              <Text style={{ color: 'white', marginHorizontal: 15 }}>
+                Select number of guests.
+              </Text>
+            </View>
+            <GuestPickerComponent
+              selectedNumber={selectedNumber}
+              setSelectedNumber={setSelectedNumber}
+            />
+          </View>
+        </View>
+        <View style={{ flex: 1 }}>
+          {slotsData && (
+            <FindSlots
+              restaurant={restaurant}
+              date={date}
+              selectedNumber={selectedNumber}
+              slots={slotsData.slot}
+              selectedSlot={selectedSlot}
+              setSelectedSlot={setSelectedSlot}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

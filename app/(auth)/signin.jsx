@@ -20,6 +20,10 @@ import validationSchema from '../../utils/authSchema';
 
 const Signin = () => {
   const router = useRouter();
+  const handleGuest = async () => {
+    await AsyncStorage.setItem('isGuest', 'true');
+    router.push('/home');
+  };
 
   const db = getFirestore();
   const auth = getAuth();
@@ -151,10 +155,7 @@ const Signin = () => {
           </View>
           <View style={style.Usertxt}>
             <Text style={style.Usertxt}>Be a </Text>
-            <TouchableOpacity
-              style={{ paddingTop: 20 }}
-              onPress={() => router.push('/home')}
-            >
+            <TouchableOpacity style={{ paddingTop: 20 }} onPress={handleGuest}>
               <Text style={style.btnRoute}>Guest User</Text>
             </TouchableOpacity>
           </View>

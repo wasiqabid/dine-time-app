@@ -1,6 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
+
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   ImageBackground,
@@ -25,12 +26,63 @@ import { db } from '../../config/firebaseConfig';
 const Home = () => {
   const [restaurants, setRestaurants] = useState([]);
   const router = useRouter();
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const temp = async () => {
+    const value = await AsyncStorage.getItem('isGuest');
+    const email = await AsyncStorage.getItem('userEmail');
+
+    console.log(value, email);
+  };
 
   useEffect(() => {
     // uploadRestaurants();
     // uploadSlots();
     // uploadCarouselImages();
+    temp();
   }, []);
+  const RestaurantSkeleton = () => {
+    return (
+      <View
+        style={{
+          width: 250,
+          marginRight: 15,
+        }}
+      >
+        {/* Image Skeleton */}
+        <View
+          style={{
+            width: '100%',
+            height: 150,
+            borderRadius: 12,
+            backgroundColor: '#2A2A2A',
+          }}
+        />
+
+        {/* Restaurant Name Skeleton */}
+        <View
+          style={{
+            width: '70%',
+            height: 20,
+            marginTop: 10,
+            borderRadius: 5,
+            backgroundColor: '#2A2A2A',
+          }}
+        />
+
+        {/* Rating Skeleton */}
+        <View
+          style={{
+            width: '40%',
+            height: 15,
+            marginTop: 8,
+            borderRadius: 5,
+            backgroundColor: '#2A2A2A',
+          }}
+        />
+      </View>
+    );
+  };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -50,7 +102,12 @@ const Home = () => {
       <Image
         resizeMode='cover'
         source={{ uri: item.image }}
-        style={{ height: 70, marginTop: 2, marginBottom: 1 }}
+        style={{
+          height: '65%',
+          // width: windowWidth,
+          marginTop: 2,
+          marginBottom: 1,
+        }}
       />
       <Text
         style={{
@@ -85,7 +142,7 @@ const Home = () => {
   }, []);
 
   return (
-    <SafeAreaView style={{ backgroundColor: '#111', flex: 1 }}>
+    <SafeAreaView style={{ backgroundColor: Colors.Secondary, flex: 1 }}>
       <View
         style={{
           textAlign: 'center',
@@ -145,7 +202,9 @@ const Home = () => {
             </Text>
           </BlurView>
         </ImageBackground>
+
         <Text style={style.text}>Special Discounts %</Text>
+
         {restaurants.length > 0 ? (
           <FlatList
             data={restaurants}
@@ -153,12 +212,16 @@ const Home = () => {
             horizontal
             contentContainerStyle={{ padding: 16 }}
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={true}
           />
         ) : (
-          <ActivityIndicator animating color={Colors.Primary} />
+          <FlatList
+            data={[1, 2, 3]}
+            renderItem={() => <RestaurantSkeleton />}
+            horizontal
+            contentContainerStyle={{ padding: 16 }}
+            showsHorizontalScrollIndicator={false}
+          />
         )}
-
         <Text style={style.text}>Our Restaurants</Text>
         {restaurants.length > 0 ? (
           <FlatList
@@ -171,7 +234,15 @@ const Home = () => {
             initialNumToRender={5}
           />
         ) : (
-          <ActivityIndicator animating color={Colors.Primary} />
+          <FlatList
+            data={[1, 2, 3]}
+            renderItem={() => <RestaurantSkeleton />}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={true}
+            contentContainerStyle={{ padding: 16 }}
+            initialNumToRender={5}
+          />
         )}
       </ScrollView>
     </SafeAreaView>

@@ -21,9 +21,10 @@ const DatePickerComponent = ({ date, setDate }) => {
               color: 'white',
               fontSize: 15,
               padding: 15,
-              backgroundColor: '#474747',
+              backgroundColor: '#313131',
               marginLeft: 15,
               borderRadius: 15,
+              marginRight: 15,
             }}
           >
             {date.toLocaleDateString()}
