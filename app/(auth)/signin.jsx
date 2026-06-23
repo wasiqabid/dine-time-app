@@ -40,6 +40,8 @@ const Signin = () => {
       if (userDoc.exists()) {
         console.log('User data.', userDoc.data());
         await AsyncStorage.setItem('userEmail', values.email);
+        await AsyncStorage.setItem('isGuest', 'false');
+
         router.push('/home');
       } else {
         console.log('no such document.');
@@ -170,6 +172,9 @@ const Signin = () => {
     </SafeAreaView>
   );
 };
+
+export default Signin;
+
 const style = StyleSheet.create({
   btnSignin: {
     backgroundColor: '#f49b33',
@@ -238,5 +243,3 @@ const style = StyleSheet.create({
     alignContent: 'center',
   },
 });
-
-export default Signin;
