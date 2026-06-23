@@ -51,7 +51,7 @@ export default function Index() {
             </TouchableOpacity>
           </View>
           <View style={style.Linetxt}>
-            <View style={style.line} />{' '}
+            <View style={style.line} />
             <Text style={{ marginHorizontal: 10, color: Colors.Primary }}>
               or
             </Text>

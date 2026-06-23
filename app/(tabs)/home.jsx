@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../assets/images/CSS/Colors';
+
 import dinetimelogo from '../../assets/images/dinetimelogo.png';
 import banner from '../../assets/images/homeBanner.png';
 // import { restaurants } from '../../store/restaurants';
@@ -41,6 +42,7 @@ const Home = () => {
     // uploadCarouselImages();
     temp();
   }, []);
+
   const RestaurantSkeleton = () => {
     return (
       <View
