@@ -1,8 +1,19 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addDoc, collection } from 'firebase/firestore';
+import { Formik } from 'formik';
 import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Colors } from '../../assets/images/CSS/Colors';
 import { db } from '../../config/firebaseConfig';
+import validationSchema from '../../utils/GuestFormSchema';
 
 const FindSlots = ({
   date,
@@ -13,6 +24,8 @@ const FindSlots = ({
   restaurant,
 }) => {
   const [slotsVisible, setSlotsVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [formVisible, setFormVisible] = useState(false);
 
   const handlePress = () => {
     setSlotsVisible(!slotsVisible);
@@ -28,6 +41,7 @@ const FindSlots = ({
 
   const handleBooking = async () => {
     const userEmail = await AsyncStorage.getItem('userEmail');
+    const guestStatus = await AsyncStorage.getItem('isGuest');
 
     if (userEmail) {
       try {
@@ -39,7 +53,30 @@ const FindSlots = ({
           restaurant: restaurant,
         });
         alert('Booking Done Succesfully!');
-      } catch (error) {}
+      } catch (error) {
+        console.log(error);
+      }
+    } else if (guestStatus === 'true') {
+      setModalVisible(true);
+      setFormVisible(true);
+    }
+  };
+  const handleCloseModal = () => {
+    setModalVisible(false);
+  };
+  const handleFormSubmit = async (values) => {
+    try {
+      await addDoc(collection(db, 'bookings'), {
+        ...values,
+        slot: selectedSlot,
+        date: date.toISOString(),
+        guests: selectedNumber,
+        restaurant: restaurant,
+      });
+      alert('Booking Done Succesfully!');
+      setModalVisible(false);
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -103,6 +140,76 @@ const FindSlots = ({
             ))}
         </View>
       )}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType='slide'
+        style={style.modal}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#00000080',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <View style={style.formView}>
+            {formVisible && (
+              <Formik
+                initialValues={{ fullName: '', phoneNumber: '' }}
+                validationSchema={validationSchema}
+                onSubmit={handleFormSubmit}
+              >
+                {({
+                  handleBlur,
+                  handleChange,
+                  handleSubmit,
+                  values,
+                  touched,
+                  errors,
+                }) => (
+                  <View>
+                    <View>
+                      <Ionicons
+                        name='close-circle'
+                        size={30}
+                        color={Colors.Primary}
+                        onPress={handleCloseModal}
+                      />
+                    </View>
+                    <Text style={style.valueTxt}>Name</Text>
+                    <TextInput
+                      style={style.imputTxt}
+                      onChangeText={handleChange('fullName')}
+                      onBlur={handleBlur('fullName')}
+                      value={values.fullName}
+                    />
+                    {touched.fullName && errors.fullName && (
+                      <Text style={{ color: 'red' }}>{errors.fullName}</Text>
+                    )}
+                    <Text style={style.valueTxt}>Phome Number</Text>
+                    <TextInput
+                      style={style.imputTxt}
+                      onChangeText={handleChange('phoneNumber')}
+                      onBlur={handleBlur('phoneNumber')}
+                      value={values.phoneNumber}
+                    />
+                    {touched.phoneNumber && errors.phoneNumber && (
+                      <Text style={{ color: 'red' }}>{errors.phoneNumber}</Text>
+                    )}
+                    <TouchableOpacity
+                      onPress={handleSubmit}
+                      style={style.btnSubmit}
+                    >
+                      <Text style={style.Submittxt}>Submit</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </Formik>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -163,4 +270,50 @@ const style = StyleSheet.create({
   //   // height: 30,
 
   // },
+
+  modal: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    margin: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  imputTxt: {
+    backgroundColor: '#313131',
+    color: '#ffffff',
+    borderColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    // alignItems: 'center',
+    borderWidth: 2,
+    paddingBottom: 10,
+    paddingTop: 10,
+  },
+  btnSubmit: {
+    backgroundColor: '#f49b33',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  valueTxt: {
+    color: '#f49b33',
+    fontWeight: 'bold',
+    paddingBottom: 10,
+    paddingTop: 10,
+  },
+  Submittxt: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1b1818',
+  },
+
+  formView: {
+    backgroundColor: '#313131',
+    marginHorizontal: 4,
+    borderRadius: 25,
+    padding: 4,
+    paddingBottom: 6,
+  },
 });
