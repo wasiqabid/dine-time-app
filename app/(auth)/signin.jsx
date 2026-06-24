@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { Formik } from 'formik';
+import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -14,9 +16,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../assets/images/CSS/Colors';
 import dinetimelogo from '../../assets/images/dinetimelogo.png';
 import Frame from '../../assets/images/Frame.png';
-import validationSchema from '../../utils/authSchema';
+import validationSchema from '../../utils/SigninSchema';
+// import validationSchema from '../../utils/authSchema';
 
 const Signin = () => {
   const router = useRouter();
@@ -25,9 +29,14 @@ const Signin = () => {
     router.push('/home');
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const db = getFirestore();
   const auth = getAuth();
   const handleSignin = async (values) => {
+    if (isLoading) return;
+    setIsLoading(true);
+
     try {
       const userCredentials = await signInWithEmailAndPassword(
         auth,
@@ -38,8 +47,11 @@ const Signin = () => {
 
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
+        const data = userDoc.data();
         console.log('User data.', userDoc.data());
         await AsyncStorage.setItem('userEmail', values.email);
+        await AsyncStorage.setItem('userName', data.name);
+        await AsyncStorage.setItem('userNumber', data.number);
         await AsyncStorage.setItem('isGuest', 'false');
 
         router.push('/home');
@@ -58,6 +70,8 @@ const Signin = () => {
           [{ text: 'OK' }],
         );
       }
+    } finally {
+      setIsLoading(false);
     }
   };
   // const router = useRouter();
@@ -113,31 +127,38 @@ const Signin = () => {
               <View>
                 <Text style={style.valueTxt}>Email</Text>
                 <TextInput
-                  style={style.imputTxt}
+                  style={[style.imputTxt, isLoading && style.disabledInput]}
                   keyboardType='email-address'
                   onChangeText={handleChange('email')}
                   onBlur={handleBlur('email')}
                   value={values.email}
+                  editable={!isLoading}
                 />
                 {touched.email && errors.email && (
                   <Text style={{ color: 'red' }}>{errors.email}</Text>
                 )}
                 <Text style={style.valueTxt}>Password</Text>
                 <TextInput
-                  style={style.imputTxt}
+                  style={[style.imputTxt, isLoading && style.disabledInput]}
                   secureTextEntry
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
                   value={values.password}
+                  editable={!isLoading}
                 />
                 {touched.password && errors.password && (
                   <Text style={{ color: 'red' }}>{errors.password}</Text>
                 )}
                 <TouchableOpacity
                   onPress={handleSubmit}
-                  style={style.btnSignin}
+                  style={[style.btnSignin, isLoading && style.disabledbtn]}
+                  disabled={isLoading}
                 >
-                  <Text style={style.Signintxt}>Sign In</Text>
+                  {isLoading ? (
+                    <ActivityIndicator color={Colors.Primary} />
+                  ) : (
+                    <Text style={style.Signintxt}>Sign In</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             )}
@@ -241,5 +262,13 @@ const style = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignContent: 'center',
+  },
+  disabledbtn: {
+    backgroundColor: ' rgba(244, 155, 51, 0.15)',
+    // color: 'black',
+  },
+  disabledInput: {
+    backgroundColor: 'rgba(163, 163, 163, 0.25)',
+    color: '#999999',
   },
 });

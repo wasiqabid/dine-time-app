@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { doc, getFirestore, setDoc } from 'firebase/firestore';
 import { Formik } from 'formik';
+import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -14,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../assets/images/CSS/Colors';
 import dinetimelogo from '../../assets/images/dinetimelogo.png';
 import Frame from '../../assets/images/Frame.png';
 import validationSchema from '../../utils/authSchema';
@@ -27,7 +30,11 @@ const Signup = () => {
   const db = getFirestore();
   const auth = getAuth();
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleSignup = async (values) => {
+    if (isLoading) return;
+    setIsLoading(true);
     try {
       const userCredentials = await createUserWithEmailAndPassword(
         auth,
@@ -39,8 +46,13 @@ const Signup = () => {
       await setDoc(doc(db, 'users', user.uid), {
         email: values.email,
         createdAt: new Date(),
+        name: values.name,
+        number: values.number,
       });
       await AsyncStorage.setItem('userEmail', values.email);
+      await AsyncStorage.setItem('userName', values.name);
+      await AsyncStorage.setItem('userNumber', values.number);
+
       await AsyncStorage.setItem('isGuest', 'false');
       router.push('/home');
     } catch (error) {
@@ -57,6 +69,8 @@ const Signup = () => {
           [{ text: 'OK' }],
         );
       }
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -96,7 +110,13 @@ const Signup = () => {
             Let's get you started
           </Text>
           <Formik
-            initialValues={{ email: '', password: '' }}
+            initialValues={{
+              name: '',
+              number: '',
+              email: '',
+              password: '',
+              confirmPassword: '',
+            }}
             validationSchema={validationSchema}
             onSubmit={handleSignup}
           >
@@ -109,33 +129,74 @@ const Signup = () => {
               errors,
             }) => (
               <View>
+                <Text style={style.valueTxt}>Full Name</Text>
+                <TextInput
+                  style={[style.inputTxt, isLoading && style.disabledInput]}
+                  onChangeText={handleChange('name')}
+                  onBlur={handleBlur('name')}
+                  value={values.name}
+                  editable={!isLoading}
+                />
+                {touched.name && errors.name && (
+                  <Text style={{ color: 'red' }}>{errors.name}</Text>
+                )}
                 <Text style={style.valueTxt}>Email</Text>
                 <TextInput
-                  style={style.imputTxt}
+                  style={[style.inputTxt, isLoading && style.disabledInput]}
                   keyboardType='email-address'
                   onChangeText={handleChange('email')}
                   onBlur={handleBlur('email')}
                   value={values.email}
+                  editable={!isLoading}
                 />
                 {touched.email && errors.email && (
                   <Text style={{ color: 'red' }}>{errors.email}</Text>
                 )}
                 <Text style={style.valueTxt}>Password</Text>
                 <TextInput
-                  style={style.imputTxt}
+                  style={[style.inputTxt, isLoading && style.disabledInput]}
                   secureTextEntry
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
                   value={values.password}
+                  editable={!isLoading}
                 />
                 {touched.password && errors.password && (
                   <Text style={{ color: 'red' }}>{errors.password}</Text>
                 )}
+                <Text style={style.valueTxt}>Confirm Password</Text>
+                <TextInput
+                  style={[style.inputTxt, isLoading && style.disabledInput]}
+                  secureTextEntry
+                  onChangeText={handleChange('confirmPassword')}
+                  onBlur={handleBlur('confirmPassword')}
+                  value={values.confirmPassword}
+                  editable={!isLoading}
+                />
+                {touched.confirmPassword && errors.confirmPassword && (
+                  <Text style={{ color: 'red' }}>{errors.confirmPassword}</Text>
+                )}
+                <Text style={style.valueTxt}>Phone Number</Text>
+                <TextInput
+                  style={[style.inputTxt, isLoading && style.disabledInput]}
+                  onChangeText={handleChange('number')}
+                  onBlur={handleBlur('number')}
+                  value={values.number}
+                  editable={!isLoading}
+                />
+                {touched.number && errors.number && (
+                  <Text style={{ color: 'red' }}>{errors.number}</Text>
+                )}
                 <TouchableOpacity
                   onPress={handleSubmit}
-                  style={style.btnSignup}
+                  style={[style.btnSignup, isLoading && style.disabledbtn]}
+                  disabled={isLoading}
                 >
-                  <Text style={style.Signuptxt}>Sign Up</Text>
+                  {isLoading ? (
+                    <ActivityIndicator color={Colors.Primary} />
+                  ) : (
+                    <Text style={style.Signuptxt}>Sign Up</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             )}
@@ -185,7 +246,7 @@ const style = StyleSheet.create({
     color: '#1b1818',
   },
 
-  imputTxt: {
+  inputTxt: {
     backgroundColor: '#1b1818',
     color: '#ffffff',
     borderColor: '#fff',
@@ -246,6 +307,14 @@ const style = StyleSheet.create({
     marginBottom: 1,
     // padding: 2,
     alignContent: 'center',
+  },
+  disabledbtn: {
+    backgroundColor: ' rgba(244, 155, 51, 0.15)',
+    // color: 'black',
+  },
+  disabledInput: {
+    backgroundColor: 'rgba(163, 163, 163, 0.25)',
+    color: '#999999',
   },
 });
 

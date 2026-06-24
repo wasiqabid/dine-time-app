@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -18,6 +19,7 @@ import {
   View,
 } from 'react-native';
 import { Colors } from '../../assets/images/CSS/Colors';
+import dinetimelogo from '../../assets/images/dinetimelogo.png';
 
 const history = () => {
   const [userEmail, setUserEmail] = useState(null);
@@ -77,6 +79,12 @@ const history = () => {
 
   return (
     <SafeAreaView style={style.safeView}>
+      <View style={{ alignItems: 'center' }}>
+        <Image
+          source={dinetimelogo}
+          style={{ width: 230, height: 150, alignSelf: 'center' }}
+        />
+      </View>
       <View style={{ flex: 1, marginVertical: 20 }}>
         <View style={{ alignItems: 'center' }}>
           <Text style={style.heading}>User History</Text>
@@ -103,7 +111,11 @@ const history = () => {
         ) : (
           // <Text style={{ color: 'white', fontSize: 24 }}>Data is here.</Text>
           <View
-            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
           >
             <Text style={style.guestTxt}>
               Please Sign in to see user history.
@@ -114,6 +126,13 @@ const history = () => {
           </View>
         )}
       </View>
+
+      {/* <View style={{ alignItems: 'center' }}>
+          <Image
+            source={Frame}
+            style={{ height: 300, width: 300, resizeMode: 'contain' }}
+          />
+        </View> */}
     </SafeAreaView>
   );
 };
