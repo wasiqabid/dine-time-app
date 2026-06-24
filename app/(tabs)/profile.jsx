@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { getAuth, signOut } from 'firebase/auth';
+import { doc, getFirestore, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -8,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -17,10 +19,12 @@ import dinetimelogo from '../../assets/images/dinetimelogo.png';
 
 export default function Profile() {
   const auth = getAuth();
+  const db = getFirestore();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState(null);
   const [userName, setUserName] = useState(null);
   const [userNumber, setUserNumber] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   useEffect(() => {
     const fetchEmail = async () => {
       const email = await AsyncStorage.getItem('userEmail');
@@ -41,12 +45,34 @@ export default function Profile() {
     fetchName();
     fetchNumber();
   }, []);
+
+  const handleSaveChanges = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        Alert.alert('Error', 'No user logged in.');
+        return;
+      }
+
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, {
+        name: userName,
+        number: userNumber,
+      });
+
+      await AsyncStorage.setItem('userName', userName);
+      await AsyncStorage.setItem('userEmail', userEmail);
+      Alert.alert('Success', 'Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {}
+  };
   const handleLogout = async () => {
     try {
       await signOut(auth);
       await AsyncStorage.removeItem('userEmail');
       await AsyncStorage.removeItem('name');
       await AsyncStorage.removeItem('number');
+      await AsyncStorage.removeItem('isGuest');
 
       setUserEmail(null);
       setUserName(null);
@@ -88,28 +114,94 @@ export default function Profile() {
                 borderColor: Colors.Primary,
                 padding: 10,
                 borderRadius: 5,
+                width: '85%',
                 marginBottom: 10,
               }}
             >
               <View style={style.view}>
-                <Text style={style.emailTxt}>Name: {userName}</Text>
+                <Text style={style.LabelTxt}>Name:</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={style.input}
+                    value={userName}
+                    onChangeText={setUserName}
+                    placeholder='Enter Name'
+                    placeholderTextColor='#666'
+                    autoCapitalize='words'
+                  />
+                ) : (
+                  <Text style={style.LabelTxt}>{userName}</Text>
+                )}
               </View>
               <View style={style.view}>
-                <Text style={style.emailTxt}>Email: {userEmail}</Text>
+                <Text style={style.LabelTxt}>Email:</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={style.input}
+                    value={userEmail}
+                    onChangeText={setUserEmail}
+                    placeholder='Enter email'
+                    keyboardType='email-address'
+                    placeholderTextColor='#666'
+                    autoCapitalize='words'
+                    editable={!isEditing}
+                  />
+                ) : (
+                  <Text style={style.LabelTxt}>{userEmail}</Text>
+                )}
               </View>
               <View style={style.view}>
-                <Text style={style.emailTxt}>Phone Number: {userNumber}</Text>
+                <Text style={style.LabelTxt}>Phone Number:</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={style.input}
+                    value={userNumber}
+                    onChangeText={setUserNumber}
+                    placeholder='Enter Number'
+                    keyboardType='phone-pad'
+                    placeholderTextColor='#666'
+                  />
+                ) : (
+                  <Text style={style.LabelTxt}>{userNumber}</Text>
+                )}
               </View>
             </View>
 
+            <View style={style.actionBtns}>
+              {isEditing ? (
+                <>
+                  <TouchableOpacity
+                    style={style.btnSubmit}
+                    onPress={handleSaveChanges}
+                  >
+                    <Text style={style.btnTxt}>Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[style.btnSubmit, { backgroundColor: '#666' }]}
+                    onPress={() => setIsEditing(false)}
+                  >
+                    <Text style={[style.btnTxt, { color: 'white' }]}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={style.btnSubmit}
+                  onPress={() => setIsEditing(true)}
+                >
+                  <Text style={style.btnTxt}>Edit Profile</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <TouchableOpacity onPress={handleLogout} style={style.btnSubmit}>
               <Text style={style.btnTxt}>Log Out</Text>
             </TouchableOpacity>
           </>
         ) : (
           <>
-            <TouchableOpacity onPress={handleSignup} style={style.btnSubmit}>
-              <Text style={style.btnTxt}>Log Out</Text>
+            <TouchableOpacity style={style.btnSubmit} onPress={handleSignup}>
+              <Text style={style.btnTxt}>Sign Up</Text>
             </TouchableOpacity>
           </>
         )}
@@ -141,7 +233,7 @@ const style = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.Secondary,
   },
-  emailTxt: {
+  LabelTxt: {
     color: 'white',
     fontSize: 15,
     marginBottom: 6,
@@ -164,5 +256,18 @@ const style = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
     margin: 10,
+  },
+  input: {
+    color: 'white',
+    fontSize: 16,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f49b33',
+  },
+
+  actionBtns: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 20,
   },
 });

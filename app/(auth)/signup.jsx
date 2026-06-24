@@ -182,6 +182,7 @@ const Signup = () => {
                   onChangeText={handleChange('number')}
                   onBlur={handleBlur('number')}
                   value={values.number}
+                  keyboardType='phone-pad'
                   editable={!isLoading}
                 />
                 {touched.number && errors.number && (
