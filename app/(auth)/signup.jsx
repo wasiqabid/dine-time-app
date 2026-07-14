@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,15 +23,17 @@ import Frame from '../../assets/images/Frame.png';
 import validationSchema from '../../utils/authSchema';
 
 const Signup = () => {
-  const handleGuest = async () => {
-    await AsyncStorage.setItem('isGuest', 'true');
-    router.push('/home');
-  };
   const router = useRouter();
   const db = getFirestore();
   const auth = getAuth();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+
+  const handleGuest = async () => {
+    await AsyncStorage.setItem('isGuest', 'true');
+    router.push('/home');
+  };
 
   const handleSignup = async (values) => {
     if (isLoading) return;
@@ -43,23 +46,41 @@ const Signup = () => {
       );
       const user = userCredentials.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
+      const signupData = {
         email: values.email,
         createdAt: new Date(),
         name: values.name,
         number: values.number,
-      });
+        role: values.isAdmin ? 'admin' : 'user',
+      };
+      if (values.isAdmin) {
+        signupData.code = values.adminCode;
+      }
+
+      await setDoc(doc(db, 'users', user.uid), signupData);
+
       await AsyncStorage.setItem('userEmail', values.email);
       await AsyncStorage.setItem('userName', values.name);
       await AsyncStorage.setItem('userNumber', values.number);
-
       await AsyncStorage.setItem('isGuest', 'false');
-      router.push('/home');
+      await AsyncStorage.setItem('userRole', signupData.role);
+
+      if (signupData.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/home');
+      }
     } catch (error) {
       if (error.code === 'auth/email-already-in-use') {
         Alert.alert(
           'Sign Up failed!',
           'already signed up with this email. Please use a different email',
+          [{ text: 'OK' }],
+        );
+      } else if (error.code === 'permission-denied') {
+        Alert.alert(
+          'Invalid admin code',
+          'The admin code you entered is not valid. Please check and try again.',
           [{ text: 'OK' }],
         );
       } else {
@@ -73,13 +94,13 @@ const Signup = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <SafeAreaView style={{ backgroundColor: '#1b1818', flex: 1 }}>
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
           backgroundColor: '#1b1818',
-          // height: '100%',
           paddingBottom: 30,
           justifyContent: 'space-between',
         }}
@@ -88,7 +109,6 @@ const Signup = () => {
           style={{
             paddingHorizontal: '50',
             backgroundColor: '#1b1818',
-            // height: '100%',
             gap: 10,
           }}
         >
@@ -109,6 +129,7 @@ const Signup = () => {
           >
             Let's get you started
           </Text>
+
           <Formik
             initialValues={{
               name: '',
@@ -116,6 +137,8 @@ const Signup = () => {
               email: '',
               password: '',
               confirmPassword: '',
+              isAdmin: false,
+              adminCode: '',
             }}
             validationSchema={validationSchema}
             onSubmit={handleSignup}
@@ -124,6 +147,8 @@ const Signup = () => {
               handleBlur,
               handleChange,
               handleSubmit,
+              setFieldValue,
+              setFieldTouched,
               values,
               touched,
               errors,
@@ -140,6 +165,7 @@ const Signup = () => {
                 {touched.name && errors.name && (
                   <Text style={{ color: 'red' }}>{errors.name}</Text>
                 )}
+
                 <Text style={style.valueTxt}>Email</Text>
                 <TextInput
                   style={[style.inputTxt, isLoading && style.disabledInput]}
@@ -152,6 +178,7 @@ const Signup = () => {
                 {touched.email && errors.email && (
                   <Text style={{ color: 'red' }}>{errors.email}</Text>
                 )}
+
                 <Text style={style.valueTxt}>Password</Text>
                 <TextInput
                   style={[style.inputTxt, isLoading && style.disabledInput]}
@@ -164,6 +191,7 @@ const Signup = () => {
                 {touched.password && errors.password && (
                   <Text style={{ color: 'red' }}>{errors.password}</Text>
                 )}
+
                 <Text style={style.valueTxt}>Confirm Password</Text>
                 <TextInput
                   style={[style.inputTxt, isLoading && style.disabledInput]}
@@ -176,6 +204,7 @@ const Signup = () => {
                 {touched.confirmPassword && errors.confirmPassword && (
                   <Text style={{ color: 'red' }}>{errors.confirmPassword}</Text>
                 )}
+
                 <Text style={style.valueTxt}>Phone Number</Text>
                 <TextInput
                   style={[style.inputTxt, isLoading && style.disabledInput]}
@@ -188,6 +217,35 @@ const Signup = () => {
                 {touched.number && errors.number && (
                   <Text style={{ color: 'red' }}>{errors.number}</Text>
                 )}
+
+                {/* Is Admin checkbox */}
+                <TouchableOpacity
+                  style={style.checkboxRow}
+                  disabled={isLoading}
+                  onPress={() => {
+                    const next = !values.isAdmin;
+                    setFieldValue('isAdmin', next);
+                    if (next) {
+                      setShowAdminModal(true);
+                    } else {
+                      setFieldValue('adminCode', '');
+                      setShowAdminModal(false);
+                    }
+                  }}
+                >
+                  <View
+                    style={[
+                      style.checkboxBox,
+                      values.isAdmin && style.checkboxBoxChecked,
+                    ]}
+                  >
+                    {values.isAdmin && (
+                      <Text style={style.checkboxTick}>✓</Text>
+                    )}
+                  </View>
+                  <Text style={style.checkboxLabel}>Sign up as admin</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={handleSubmit}
                   style={[style.btnSignup, isLoading && style.disabledbtn]}
@@ -199,9 +257,75 @@ const Signup = () => {
                     <Text style={style.Signuptxt}>Sign Up</Text>
                   )}
                 </TouchableOpacity>
+
+                {/* Admin code slide-up modal */}
+                <Modal
+                  visible={showAdminModal}
+                  animationType='slide'
+                  transparent
+                  onRequestClose={() => {
+                    setFieldValue('isAdmin', false);
+                    setFieldValue('adminCode', '');
+                    setShowAdminModal(false);
+                  }}
+                >
+                  <View style={style.modalOverlay}>
+                    <View style={style.modalSheet}>
+                      <Text style={style.modalTitle}>Admin Verification</Text>
+                      <Text style={style.modalSubtitle}>
+                        Enter the admin code to register as an administrator.
+                      </Text>
+
+                      <TextInput
+                        style={style.inputTxt}
+                        placeholder='Admin code'
+                        placeholderTextColor='#999'
+                        autoCapitalize='characters'
+                        value={values.adminCode}
+                        onChangeText={handleChange('adminCode')}
+                        onBlur={handleBlur('adminCode')}
+                      />
+                      {touched.adminCode && errors.adminCode && (
+                        <Text style={{ color: 'red', paddingTop: 6 }}>
+                          {errors.adminCode}
+                        </Text>
+                      )}
+
+                      <View style={style.modalBtnRow}>
+                        <TouchableOpacity
+                          style={[style.modalBtn, style.modalCancel]}
+                          onPress={() => {
+                            setFieldValue('isAdmin', false);
+                            setFieldValue('adminCode', '');
+                            setShowAdminModal(false);
+                          }}
+                        >
+                          <Text style={style.modalCancelTxt}>Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[style.modalBtn, style.modalConfirm]}
+                          onPress={() => {
+                            if (
+                              !values.adminCode ||
+                              values.adminCode.trim() === ''
+                            ) {
+                              setFieldTouched('adminCode', true);
+                              return;
+                            }
+                            setShowAdminModal(false);
+                          }}
+                        >
+                          <Text style={style.modalConfirmTxt}>Done</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                </Modal>
               </View>
             )}
           </Formik>
+
           <View style={style.Usertxt}>
             <Text style={style.Usertxt}>Already a User?</Text>
             <TouchableOpacity
@@ -211,10 +335,12 @@ const Signup = () => {
               <Text style={style.btnRoute}> Sign In</Text>
             </TouchableOpacity>
           </View>
+
           <View style={style.Linetxt}>
             <View style={style.line} /> <Text style={style.Linetxt}>or</Text>
             <View style={style.line} />
           </View>
+
           <View style={style.Usertxt}>
             <Text style={style.Usertxt}>Be a </Text>
             <TouchableOpacity style={{ paddingTop: 20 }} onPress={handleGuest}>
@@ -222,6 +348,7 @@ const Signup = () => {
             </TouchableOpacity>
           </View>
         </View>
+
         <View style={{ alignItems: 'center' }}>
           <Image
             source={Frame}
@@ -232,6 +359,7 @@ const Signup = () => {
     </SafeAreaView>
   );
 };
+
 const style = StyleSheet.create({
   btnSignup: {
     backgroundColor: '#f49b33',
@@ -246,19 +374,16 @@ const style = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1b1818',
   },
-
   inputTxt: {
     backgroundColor: '#1b1818',
     color: '#ffffff',
     borderColor: '#fff',
     paddingVertical: 12,
     paddingHorizontal: 24,
-    // alignItems: 'center',
     borderWidth: 2,
     paddingBottom: 10,
     paddingTop: 10,
   },
-
   valueTxt: {
     color: '#f49b33',
     fontWeight: 'bold',
@@ -274,7 +399,6 @@ const style = StyleSheet.create({
     alignContent: 'center',
   },
   btnRoute: {
-    // paddingTop: 20,
     paddingLeft: 5,
     color: '#f49b33',
     fontWeight: 'bold',
@@ -286,17 +410,6 @@ const style = StyleSheet.create({
     paddingTop: 20,
     fontWeight: 'semi-bold',
     border: 10,
-    // borderColor: 'black',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignContent: 'center',
-  },
-  Linetxt: {
-    color: '#fff',
-    paddingTop: 20,
-    fontWeight: 'semi-bold',
-    border: 10,
-    // borderColor: 'black',
     flexDirection: 'row',
     justifyContent: 'center',
     alignContent: 'center',
@@ -306,16 +419,94 @@ const style = StyleSheet.create({
     borderColor: '#f49b33',
     width: 100,
     marginBottom: 1,
-    // padding: 2,
     alignContent: 'center',
   },
   disabledbtn: {
     backgroundColor: ' rgba(244, 155, 51, 0.15)',
-    // color: 'black',
   },
   disabledInput: {
     backgroundColor: 'rgba(163, 163, 163, 0.25)',
     color: '#999999',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 18,
+    gap: 10,
+  },
+  checkboxBox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#f49b33',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxBoxChecked: {
+    backgroundColor: '#f49b33',
+  },
+  checkboxTick: {
+    color: '#1b1818',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  checkboxLabel: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#1b1818',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 36,
+    borderTopWidth: 2,
+    borderColor: '#f49b33',
+    gap: 6,
+  },
+  modalTitle: {
+    color: '#f49b33',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalSubtitle: {
+    color: '#fff',
+    fontSize: 13,
+    paddingBottom: 14,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingTop: 20,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  modalCancel: {
+    borderWidth: 2,
+    borderColor: '#f49b33',
+  },
+  modalCancelTxt: {
+    color: '#f49b33',
+    fontWeight: 'bold',
+  },
+  modalConfirm: {
+    backgroundColor: '#f49b33',
+  },
+  modalConfirmTxt: {
+    color: '#1b1818',
+    fontWeight: 'bold',
   },
 });
 

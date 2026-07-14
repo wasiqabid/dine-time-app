@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+
 const validationSchema = Yup.object().shape({
   email: Yup.string().required('Email is required').email('invalid email'),
   password: Yup.string()
@@ -12,5 +13,13 @@ const validationSchema = Yup.object().shape({
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password'), null], 'passwords must match.')
     .required('please confirm your password'),
+
+  isAdmin: Yup.boolean(),
+  adminCode: Yup.string().when('isAdmin', {
+    is: true,
+    then: (schema) => schema.required('Admin code is required'),
+    otherwise: (schema) => schema.notRequired(),
+  }),
 });
+
 export default validationSchema;

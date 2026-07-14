@@ -35,6 +35,13 @@ const Home = () => {
 
     console.log(value, email);
   };
+  // useEffect(() => {
+  //   first
+
+  //   return () => {
+  //     second
+  //   }
+  // }, [third])
 
   useEffect(() => {
     // uploadRestaurants();
